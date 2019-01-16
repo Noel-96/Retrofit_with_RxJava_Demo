@@ -14,9 +14,17 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import rx.functions.Func1;
+import io.reactivex.schedulers.Schedulers;
+
+import static rx.Observable.from;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -33,9 +41,8 @@ public class MainActivity extends AppCompatActivity {
         ((App) getApplication()).getComponent().inject(this);
 
 
-        Call<Twitch> call = twitchAPI.getTopGames();
 
-        call.enqueue(new Callback<Twitch>() {
+        twitchAPI.getTopGames().enqueue(new Callback<Twitch>() {
             @Override
             public void onResponse(Call<Twitch> call, Response<Twitch> response) {
                 List<Top> gameList = response.body().getTop();
@@ -48,5 +55,55 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+
+        twitchAPI.getTopGamesObservable()
+                .flatMap(new Func1<Twitch, Observable<Top>>(){
+                    @Override
+                    public  Observable<Top> call (Twitch twitch){
+                        return  Observable.from(twitch.getTop());
+                    }
+                }).flatMap(new Func1<Top, Observable<String>>(){
+                    @Override
+                    public  Observable<String> call (Top top){
+                        return  Observable.just(top.getGame().getName());
+
+                    }
+        }).subscribeOn(AndroidSchedulers.mainThread()).observeOn(Schedulers.io()).subscribe(new Observer<String>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+
+            @Override
+            public void onNext(String s) {
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+        
+        }
+
+
+
+
+
+
+
+
+
     }
-}
+
+
+
+
+
+

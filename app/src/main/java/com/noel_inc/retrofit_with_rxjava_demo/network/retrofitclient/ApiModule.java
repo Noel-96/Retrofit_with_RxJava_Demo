@@ -1,5 +1,7 @@
 package com.noel_inc.retrofit_with_rxjava_demo.network.retrofitclient;
 
+import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
+
 import dagger.Module;
 import dagger.Provides;
 import okhttp3.OkHttpClient;
@@ -10,6 +12,9 @@ import retrofit2.converter.gson.GsonConverterFactory;
 @Module
 public class ApiModule {
 
+    //TODO HHIDE API KEY
+
+    // make retofit in provide retrofit method null proof
 
     public final String BASE_URL = "https://api.twitch.tv/kraken/";
 
@@ -17,7 +22,7 @@ public class ApiModule {
     public OkHttpClient provideClient (){
 
         HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
-        interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+        interceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
 
         return  new OkHttpClient.Builder().addInterceptor(interceptor).build();
     }
@@ -26,7 +31,12 @@ public class ApiModule {
     public Retrofit provideRetrofit(String baseURL, OkHttpClient client){
 
 
-        return  new Retrofit.Builder().baseUrl(baseURL).client(client).addConverterFactory(GsonConverterFactory.create()).build();
+        return  new Retrofit.Builder()
+                .baseUrl(baseURL)
+                .client(client)
+                .addConverterFactory(GsonConverterFactory.create())
+                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+                .build();
     }
 
 
