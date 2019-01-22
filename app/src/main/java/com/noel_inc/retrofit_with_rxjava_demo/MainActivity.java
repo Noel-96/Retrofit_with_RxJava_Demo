@@ -1,5 +1,6 @@
 package com.noel_inc.retrofit_with_rxjava_demo;
 
+import android.annotation.SuppressLint;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -24,6 +25,7 @@ import retrofit2.Response;
 import rx.functions.Func1;
 import io.reactivex.schedulers.Schedulers;
 
+import static io.reactivex.Observable.fromIterable;
 import static rx.Observable.from;
 
 public class MainActivity extends AppCompatActivity {
@@ -32,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
     @Inject
     TwitchAPI twitchAPI;
 
+    @SuppressLint("CheckResult")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,42 +58,36 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+        Observable<List<Observable<Top>>> twitchObservable = twitchAPI.getTopGamesObservable()
+                .map(result -> Observable.fromIterable(result.getTop()))
+                .toList()
+                .toObservable();
 
-        twitchAPI.getTopGamesObservable()
-                .flatMap(new Func1<Twitch, Observable<Top>>(){
+
+        twitchObservable
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(Schedulers.io())
+                .subscribe(new Observer<List<Observable<Top>>>() {
                     @Override
-                    public  Observable<Top> call (Twitch twitch){
-                        return  Observable.from(twitch.getTop());
+                    public void onSubscribe(Disposable d) {
+
                     }
-                }).flatMap(new Func1<Top, Observable<String>>(){
+
                     @Override
-                    public  Observable<String> call (Top top){
-                        return  Observable.just(top.getGame().getName());
+                    public void onNext(List<Observable<Top>> observables) {
 
                     }
-        }).subscribeOn(AndroidSchedulers.mainThread()).observeOn(Schedulers.io()).subscribe(new Observer<String>() {
-            @Override
-            public void onSubscribe(Disposable d) {
 
-            }
+                    @Override
+                    public void onError(Throwable e) {
 
-            @Override
-            public void onNext(String s) {
+                    }
 
-            }
+                    @Override
+                    public void onComplete() {
 
-            @Override
-            public void onError(Throwable e) {
-
-            }
-
-            @Override
-            public void onComplete() {
-
-            }
-        });
-        
-        }
+                    }
+                });
 
 
 
@@ -102,8 +99,4 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-
-
-
-
-
+}
